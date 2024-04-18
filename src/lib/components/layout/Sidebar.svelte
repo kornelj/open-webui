@@ -47,6 +47,39 @@
 			show = true;
 		}
 		await chats.set(await getChatList(localStorage.token));
+
+		let touchstartX = 0;
+		let touchendX = 0;
+
+		function checkDirection() {
+			const screenWidth = window.innerWidth;
+			const swipeDistance = Math.abs(touchendX - touchstartX);
+			if (swipeDistance >= screenWidth / 4) {
+				if (touchendX < touchstartX) {
+					show = false;
+				}
+				if (touchendX > touchstartX) {
+					show = true;
+				}
+			}
+		}
+
+		const onTouchStart = (e) => {
+			touchstartX = e.changedTouches[0].screenX;
+		};
+
+		const onTouchEnd = (e) => {
+			touchendX = e.changedTouches[0].screenX;
+			checkDirection();
+		};
+
+		document.addEventListener('touchstart', onTouchStart);
+		document.addEventListener('touchend', onTouchEnd);
+
+		return () => {
+			document.removeEventListener('touchstart', onTouchStart);
+			document.removeEventListener('touchend', onTouchEnd);
+		};
 	});
 
 	// Helper function to fetch and add chat content to each chat
@@ -515,6 +548,7 @@
 							{:else}
 								<div class="flex self-center space-x-1.5 z-10">
 									<ChatMenu
+										chatId={chat.id}
 										renameHandler={() => {
 											chatTitle = chat.title;
 											chatTitleEditId = chat.id;
@@ -711,6 +745,7 @@
 	</div>
 
 	<div
+		id="sidebar-handle"
 		class="fixed left-0 top-[50dvh] -translate-y-1/2 transition-transform translate-x-[255px] md:translate-x-[260px] rotate-0"
 	>
 		<Tooltip

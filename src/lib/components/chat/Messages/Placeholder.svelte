@@ -68,7 +68,7 @@
 			{:else}
 				<div class=" line-clamp-1">{$i18n.t('Hello, {{name}}', { name: $user.name })}</div>
 
-				<div>{$i18n.t('How can I assist you today?')}</div>
+				<div>Welcome to Jabil BSA AI Assistant</div>
 			{/if}
 		</div>
 	</div>

@@ -17,14 +17,27 @@
 	let titleAutoGenerateModelExternal = '';
 	let fullScreenMode = false;
 	let titleGenerationPrompt = '';
+	let splitLargeChunks = false;
 
 	// Interface
 	let promptSuggestions = [];
 	let showUsername = false;
+	let chatBubble = true;
+	let chatDirection: 'LTR' | 'RTL' = 'LTR';
+
+	const toggleSplitLargeChunks = async () => {
+		splitLargeChunks = !splitLargeChunks;
+		saveSettings({ splitLargeChunks: splitLargeChunks });
+	};
 
 	const toggleFullScreenMode = async () => {
 		fullScreenMode = !fullScreenMode;
 		saveSettings({ fullScreenMode: fullScreenMode });
+	};
+
+	const toggleChatBubble = async () => {
+		chatBubble = !chatBubble;
+		saveSettings({ chatBubble: chatBubble });
 	};
 
 	const toggleShowUsername = async () => {
@@ -64,6 +77,11 @@
 		}
 	};
 
+	const toggleChangeChatDirection = async () => {
+		chatDirection = chatDirection === 'LTR' ? 'RTL' : 'LTR';
+		saveSettings({ chatDirection });
+	};
+
 	const updateInterfaceHandler = async () => {
 		if ($user.role === 'admin') {
 			promptSuggestions = await setDefaultPromptSuggestions(localStorage.token, promptSuggestions);
@@ -99,7 +117,10 @@
 
 		responseAutoCopy = settings.responseAutoCopy ?? false;
 		showUsername = settings.showUsername ?? false;
+		chatBubble = settings.chatBubble ?? true;
 		fullScreenMode = settings.fullScreenMode ?? false;
+		splitLargeChunks = settings.splitLargeChunks ?? false;
+		chatDirection = settings.chatDirection ?? 'LTR';
 	});
 </script>
 
@@ -110,9 +131,29 @@
 		dispatch('save');
 	}}
 >
-	<div class=" space-y-3 pr-1.5 overflow-y-scroll max-h-[22rem]">
+	<div class=" space-y-3 pr-1.5 overflow-y-scroll max-h-[25rem]">
 		<div>
 			<div class=" mb-1 text-sm font-medium">{$i18n.t('WebUI Add-ons')}</div>
+
+			<div>
+				<div class=" py-0.5 flex w-full justify-between">
+					<div class=" self-center text-xs font-medium">{$i18n.t('Chat Bubble UI')}</div>
+
+					<button
+						class="p-1 px-3 text-xs flex rounded transition"
+						on:click={() => {
+							toggleChatBubble();
+						}}
+						type="button"
+					>
+						{#if chatBubble === true}
+							<span class="ml-2 self-center">{$i18n.t('On')}</span>
+						{:else}
+							<span class="ml-2 self-center">{$i18n.t('Off')}</span>
+						{/if}
+					</button>
+				</div>
+			</div>
 
 			<div>
 				<div class=" py-0.5 flex w-full justify-between">
@@ -176,26 +217,68 @@
 				</div>
 			</div>
 
+			{#if !$settings.chatBubble}
+				<div>
+					<div class=" py-0.5 flex w-full justify-between">
+						<div class=" self-center text-xs font-medium">
+							{$i18n.t('Display the username instead of You in the Chat')}
+						</div>
+
+						<button
+							class="p-1 px-3 text-xs flex rounded transition"
+							on:click={() => {
+								toggleShowUsername();
+							}}
+							type="button"
+						>
+							{#if showUsername === true}
+								<span class="ml-2 self-center">{$i18n.t('On')}</span>
+							{:else}
+								<span class="ml-2 self-center">{$i18n.t('Off')}</span>
+							{/if}
+						</button>
+					</div>
+				</div>
+			{/if}
+
 			<div>
 				<div class=" py-0.5 flex w-full justify-between">
 					<div class=" self-center text-xs font-medium">
-						{$i18n.t('Display the username instead of You in the Chat')}
+						{$i18n.t('Fluidly stream large external response chunks')}
 					</div>
 
 					<button
 						class="p-1 px-3 text-xs flex rounded transition"
 						on:click={() => {
-							toggleShowUsername();
+							toggleSplitLargeChunks();
 						}}
 						type="button"
 					>
-						{#if showUsername === true}
+						{#if splitLargeChunks === true}
 							<span class="ml-2 self-center">{$i18n.t('On')}</span>
 						{:else}
 							<span class="ml-2 self-center">{$i18n.t('Off')}</span>
 						{/if}
 					</button>
 				</div>
+			</div>
+		</div>
+
+		<div>
+			<div class=" py-0.5 flex w-full justify-between">
+				<div class=" self-center text-xs font-medium">{$i18n.t('Chat direction')}</div>
+
+				<button
+					class="p-1 px-3 text-xs flex rounded transition"
+					on:click={toggleChangeChatDirection}
+					type="button"
+				>
+					{#if chatDirection === 'LTR'}
+						<span class="ml-2 self-center">{$i18n.t('LTR')}</span>
+					{:else}
+						<span class="ml-2 self-center">{$i18n.t('RTL')}</span>
+					{/if}
+				</button>
 			</div>
 		</div>
 
@@ -254,7 +337,7 @@
 		{#if $user.role === 'admin'}
 			<hr class=" dark:border-gray-700" />
 
-			<div class=" space-y-3 pr-1.5 overflow-y-scroll max-h-80">
+			<div class=" space-y-3 pr-1.5">
 				<div class="flex w-full justify-between mb-2">
 					<div class=" self-center text-sm font-semibold">
 						{$i18n.t('Default Prompt Suggestions')}
@@ -288,20 +371,20 @@
 								<div class="flex border-b dark:border-gray-600 w-full">
 									<input
 										class="px-3 py-1.5 text-xs w-full bg-transparent outline-none border-r dark:border-gray-600"
-										placeholder="Title (e.g. Tell me a fun fact)"
+										placeholder={$i18n.t('Title (e.g. Tell me a fun fact)')}
 										bind:value={prompt.title[0]}
 									/>
 
 									<input
 										class="px-3 py-1.5 text-xs w-full bg-transparent outline-none border-r dark:border-gray-600"
-										placeholder="Subtitle (e.g. about the Roman Empire)"
+										placeholder={$i18n.t('Subtitle (e.g. about the Roman Empire)')}
 										bind:value={prompt.title[1]}
 									/>
 								</div>
 
 								<input
 									class="px-3 py-1.5 text-xs w-full bg-transparent outline-none border-r dark:border-gray-600"
-									placeholder="Prompt (e.g. Tell me a fun fact about the Roman Empire)"
+									placeholder={$i18n.t('Prompt (e.g. Tell me a fun fact about the Roman Empire)')}
 									bind:value={prompt.content}
 								/>
 							</div>
